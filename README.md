@@ -47,3 +47,4 @@ This repo is being built by following `BisaBerkah_Claude_VSCode_Prompts.md`.
 Supabase + query layer, auth, layout shell. **Next:** dashboard, wallets,
 transactions, debts, reports, categories, import/export, deploy (Prompts 12–32).
 The design source of truth is `BisaBerkah Design System/`.
+# bisaberkahid
