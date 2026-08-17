@@ -1,0 +1,6 @@
+# Reference material & docs not needed by the running app
+BisaBerkah Design System/
+BisaBerkah_Claude_VSCode_Prompts.md
+database/
+scratchpad/
+.DS_Store

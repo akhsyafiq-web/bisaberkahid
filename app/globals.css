@@ -1,0 +1,159 @@
+/* JetBrains Mono for code/IDs only (Plus Jakarta Sans is a local font, see layout.tsx).
+   Must precede all other rules per the CSS spec. */
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+
+/* ============================================================================
+   BisaBerkah — Design tokens wired into Tailwind v4.
+   Source of truth: "BisaBerkah Design System/colors_and_type.css".
+   Brand = jade "Berkah Green" (#07835A). Gold reserved for zakat/sadaqah.
+   ============================================================================ */
+
+@theme {
+  /* Fonts (Plus Jakarta Sans loaded as a local font in app/layout.tsx) */
+  --font-sans: var(--font-jakarta), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Brand — Berkah Green */
+  --color-brand-25: #f2fcf8;
+  --color-brand-50: #e3faf0;
+  --color-brand-100: #bff2dc;
+  --color-brand-200: #8ae6c1;
+  --color-brand-300: #4fd3a0;
+  --color-brand-400: #22b981;
+  --color-brand-500: #0e9f6e;
+  --color-brand-600: #07835a; /* PRIMARY */
+  --color-brand-700: #086848;
+  --color-brand-800: #09533b;
+  --color-brand-900: #093f2e;
+  --color-brand-950: #04261c;
+
+  /* Accent — Barakah Gold (zakat / sadaqah / milestones only) */
+  --color-gold-25: #fffbf0;
+  --color-gold-50: #fff6db;
+  --color-gold-100: #fcebb3;
+  --color-gold-200: #f8d982;
+  --color-gold-300: #f2c14e;
+  --color-gold-400: #e8a92a;
+  --color-gold-500: #d6900f;
+  --color-gold-600: #b57108;
+  --color-gold-700: #91560b;
+  --color-gold-800: #76450f;
+  --color-gold-900: #623a11;
+
+  /* Gray — Untitled UI cool neutrals */
+  --color-gray-25: #fcfcfd;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f2f4f7;
+  --color-gray-200: #eaecf0;
+  --color-gray-300: #d0d5dd;
+  --color-gray-400: #98a2b3;
+  --color-gray-500: #667085;
+  --color-gray-600: #475467;
+  --color-gray-700: #344054;
+  --color-gray-800: #182230;
+  --color-gray-900: #101828;
+  --color-gray-950: #0c111d;
+
+  /* Semantic ramps */
+  --color-success-50: #ecfdf3;
+  --color-success-100: #dcfae6;
+  --color-success-500: #17b26a;
+  --color-success-600: #079455;
+  --color-success-700: #067647;
+  --color-error-50: #fef3f2;
+  --color-error-100: #fee4e2;
+  --color-error-500: #f04438;
+  --color-error-600: #d92d20;
+  --color-error-700: #b42318;
+  --color-warning-50: #fffaeb;
+  --color-warning-100: #fef0c7;
+  --color-warning-500: #f79009;
+  --color-warning-600: #dc6803;
+  --color-warning-700: #b54708;
+  --color-info-50: #eff8ff;
+  --color-info-100: #d1e9ff;
+  --color-info-500: #2e90fa;
+  --color-info-600: #1570ef;
+  --color-info-700: #175cd3;
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-3xl: 24px;
+
+  /* Soft, layered shadows */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.1), 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow-md: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
+  --shadow-lg: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
+  --shadow-xl: 0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03);
+  --shadow-brand: 0 12px 24px -6px rgba(7, 131, 90, 0.3);
+
+  /* App content width (mobile-first, centered on desktop) */
+  --container-app: 480px;
+}
+
+/* ----------------------------------------------------------------------------
+   Semantic aliases — reference these in components, not raw hexes.
+   ---------------------------------------------------------------------------- */
+:root {
+  --text-primary: var(--color-gray-900);
+  --text-secondary: var(--color-gray-700);
+  --text-tertiary: var(--color-gray-500);
+  --text-placeholder: var(--color-gray-400);
+  --text-brand: var(--color-brand-700);
+
+  --bg-primary: #ffffff;
+  --bg-canvas: var(--color-gray-50);
+
+  --border-secondary: var(--color-gray-200);
+  --border-primary: var(--color-gray-300);
+
+  /* Money semantics: money-in green, expenses neutral-dark (never alarmist) */
+  --money-in: var(--color-success-600);
+  --money-out: var(--color-gray-900);
+  --money-zakat: var(--color-gold-600);
+}
+
+@layer base {
+  html {
+    height: 100%;
+  }
+  body {
+    min-height: 100%;
+    background: var(--bg-canvas);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* tabular currency figures */
+  .amount {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+
+  /* tracked overline label */
+  .eyebrow {
+    font-size: 0.875rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-brand);
+  }
+}
+
+/* Hide horizontal scrollbars on snap rows */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
