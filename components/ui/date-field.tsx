@@ -8,18 +8,20 @@ export interface DateFieldProps {
   value: string; // yyyy-MM-dd
   onChange: (value: string) => void;
   max?: string;
+  /** Allow selecting future dates (e.g. a debt due date). */
+  allowFuture?: boolean;
   id?: string;
   invalid?: boolean;
 }
 
 /** Native date input, styled to match the design system. Defaults max to today. */
-export function DateField({ value, onChange, max, id, invalid }: DateFieldProps) {
+export function DateField({ value, onChange, max, allowFuture, id, invalid }: DateFieldProps) {
   return (
     <input
       id={id}
       type="date"
       value={value}
-      max={max ?? toISODate(new Date())}
+      max={max ?? (allowFuture ? undefined : toISODate(new Date()))}
       onChange={(e) => onChange(e.target.value)}
       aria-invalid={invalid}
       className={cn(

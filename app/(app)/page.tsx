@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowDownLeft, ArrowUpRight, LogOut } from "lucide-react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  LogOut,
+  HandCoins,
+  Tag,
+  Settings,
+  ChevronRight,
+} from "lucide-react";
 import { useAuthStore } from "@/stores/auth.store";
 import { useAuth } from "@/hooks/use-auth";
 import { useMonthSummary, useTotalBalance } from "@/hooks/use-dashboard";
@@ -74,6 +82,17 @@ export default function BerandaPage() {
         />
       </div>
 
+      <section className="pb-2">
+        <p className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          Lainnya
+        </p>
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+          <MenuLink href="/debts" icon={<HandCoins className="size-5" />} label="Hutang" />
+          <MenuLink href="/categories" icon={<Tag className="size-5" />} label="Kategori" />
+          <MenuLink href="/settings" icon={<Settings className="size-5" />} label="Pengaturan" />
+        </div>
+      </section>
+
       <ConfirmDialog
         open={logoutOpen}
         title="Keluar dari akun?"
@@ -84,6 +103,27 @@ export default function BerandaPage() {
         onCancel={() => setLogoutOpen(false)}
       />
     </div>
+  );
+}
+
+function MenuLink({
+  href,
+  icon,
+  label,
+}: {
+  href: string;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-3 border-b border-gray-100 px-4 py-3.5 last:border-b-0 hover:bg-gray-50"
+    >
+      <span className="text-gray-500">{icon}</span>
+      <span className="flex-1 font-medium text-gray-900">{label}</span>
+      <ChevronRight className="size-5 text-gray-300" />
+    </Link>
   );
 }
 
