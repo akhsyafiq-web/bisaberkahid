@@ -13,7 +13,7 @@ import { CurrencyInput } from "@/components/ui/currency-input";
 import { DateField } from "@/components/ui/date-field";
 import { CategorySelect } from "@/components/transactions/category-select";
 import { toast } from "@/hooks/use-toast";
-import { useCategories } from "@/hooks/use-categories";
+import { useActiveCategories } from "@/hooks/use-categories";
 import { useWallets } from "@/hooks/use-wallets";
 import {
   useCreateExpense,
@@ -82,7 +82,7 @@ function ExpenseForm({ editId, initial }: { editId: string | null; initial: Init
   const router = useRouter();
   const isEdit = !!editId;
 
-  const { data: categories, isLoading: loadingCats } = useCategories("expense");
+  const { data: categories, isLoading: loadingCats } = useActiveCategories("expense");
   const { data: wallets } = useWallets();
   const createExpense = useCreateExpense();
   const updateExpense = useUpdateExpense(editId ?? "");

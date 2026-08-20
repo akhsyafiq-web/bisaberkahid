@@ -12,7 +12,7 @@ import { CategorySelect } from "@/components/transactions/category-select";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
-import { useCategories } from "@/hooks/use-categories";
+import { useActiveCategories } from "@/hooks/use-categories";
 import { useWallets } from "@/hooks/use-wallets";
 import { useCreateIncome, useUpdateIncome, useTransaction } from "@/hooks/use-transactions";
 import { formatCurrency, toISODate, cn } from "@/lib/utils";
@@ -73,7 +73,7 @@ function IncomeForm({ editId, initial }: { editId: string | null; initial: Initi
   const router = useRouter();
   const isEdit = !!editId;
 
-  const { data: categories, isLoading: loadingCats } = useCategories("income");
+  const { data: categories, isLoading: loadingCats } = useActiveCategories("income");
   const { data: wallets } = useWallets();
   const createIncome = useCreateIncome();
   const updateIncome = useUpdateIncome(editId ?? "");

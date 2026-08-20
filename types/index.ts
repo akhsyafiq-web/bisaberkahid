@@ -24,6 +24,7 @@ export interface Category {
   name: string;
   icon: string | null;
   is_default: boolean;
+  is_active?: boolean; // added in Fase 9 (categories_toggle.sql)
   created_at: string;
 }
 

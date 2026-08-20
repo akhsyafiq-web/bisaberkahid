@@ -26,6 +26,34 @@ export const getIncomeCategories = (s: SupabaseClient, userId: string) =>
 export const getExpenseCategories = (s: SupabaseClient, userId: string) =>
   getCategories(s, userId, "expense");
 
+/**
+ * Only active categories (for transaction-form dropdowns).
+ * Filters client-side on `is_active !== false` so it stays safe even before the
+ * categories_toggle.sql migration adds the column (undefined → treated active).
+ */
+export async function getActiveCategories(
+  supabase: SupabaseClient,
+  userId: string,
+  kind: CategoryKind
+): Promise<Category[]> {
+  const all = await getCategories(supabase, userId, kind);
+  return all.filter((c) => c.is_active !== false);
+}
+
+/** Toggle a category on/off. Requires the is_active column (Fase 9 migration). */
+export async function toggleCategoryActive(
+  supabase: SupabaseClient,
+  kind: CategoryKind,
+  categoryId: string,
+  isActive: boolean
+): Promise<void> {
+  const { error } = await supabase
+    .from(tableFor(kind))
+    .update({ is_active: isActive })
+    .eq("id", categoryId);
+  if (error) throw error;
+}
+
 export async function createCategory(
   supabase: SupabaseClient,
   userId: string,
