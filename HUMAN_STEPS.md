@@ -32,7 +32,7 @@ Jalankan berurutan. Yang sudah kamu jalankan ditandai ✅.
 ---
 
 ## 3. (Fase 11) Vercel Cron — carry-over dompet bulanan
-- [x] Cron sudah didefinisikan di `vercel.json` (`1 17 L * *` = tiap akhir bulan 00:01 WIB) ✅
+- [x] Cron sudah didefinisikan di `vercel.json` (`0 1 1 * *` = tanggal 1 jam 08:00 WIB; `L` tidak didukung Vercel sehingga diganti dari rencana awal 00:01 WIB akhir bulan) ✅
 - [ ] Tambahkan **`SUPABASE_SERVICE_ROLE_KEY`** di Vercel env (Supabase → Project
   Settings → API → service_role key). Wajib agar cron bisa memproses semua user.
 - [ ] Pastikan `CRON_SECRET` di Vercel terisi; Vercel Cron otomatis mengirim
