@@ -36,6 +36,9 @@ export const DEFAULT_WALLET_NAME = "Dompet Besar";
 /** Category name used when recording a debt payment. */
 export const DEBT_CATEGORY_NAME = "Cicilan & Hutang";
 
+/** Income category used when a new debt is also recorded as income. */
+export const LOAN_INCOME_CATEGORY_NAME = "Pinjaman";
+
 /** Category that always renders with the gold zakat accent. */
 export const ZAKAT_CATEGORY_NAME = "Sedekah & Zakat";
 
