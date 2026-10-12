@@ -116,23 +116,23 @@ export default function WalletDetailPage({
                 <div key={`${t.kind}-${t.id}`} className="flex items-center gap-3 py-3">
                   <span
                     className={`grid size-10 shrink-0 place-items-center rounded-full text-lg ${
-                      t.kind === "income" ? "bg-success-50" : "bg-gray-100"
+                      t.kind !== "expense" ? "bg-success-50" : "bg-gray-100"
                     }`}
                   >
-                    {t.categoryIcon ?? (t.kind === "income" ? "💰" : "🧾")}
+                    {t.categoryIcon ?? (t.kind !== "expense" ? "💰" : "🧾")}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-gray-900">
-                      {t.categoryName ?? (t.kind === "income" ? "Masuk" : "Keluar")}
+                      {t.categoryName ?? (t.kind !== "expense" ? "Masuk" : "Keluar")}
                     </p>
                     <p className="text-[13px] text-gray-500">{formatRelativeDay(t.date)}</p>
                   </div>
                   <p
                     className={`amount text-[15px] ${
-                      t.kind === "income" ? "text-success-600" : "text-gray-900"
+                      t.kind !== "expense" ? "text-success-600" : "text-gray-900"
                     }`}
                   >
-                    {t.kind === "income" ? "+" : "−"}
+                    {t.kind !== "expense" ? "+" : "−"}
                     {formatCurrency(t.amount)}
                   </p>
                 </div>

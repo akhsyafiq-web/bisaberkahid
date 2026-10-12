@@ -237,7 +237,7 @@ export async function getTotalBalance(
 
 export interface WalletTransactionItem {
   id: string;
-  kind: "income" | "expense";
+  kind: "income" | "expense" | "transfer";
   amount: number;
   date: string;
   notes: string | null;
@@ -265,6 +265,24 @@ export async function getTransactionsByWallet(
   ]);
   if (e1) throw e1;
   if (e2) throw e2;
+
+  // Saldo pindahan dari dompet yang dihapus. Tabel ini baru ada setelah
+  // database/wallet_delete.sql dijalankan, jadi error diperlakukan sebagai kosong.
+  const { data: tr } = await supabase
+    .from("wallet_transfers")
+    .select("id, amount, date, from_wallet_name")
+    .eq("to_wallet_id", walletId);
+  const transfers: WalletTransactionItem[] = (
+    (tr ?? []) as { id: string; amount: number; date: string; from_wallet_name: string }[]
+  ).map((r) => ({
+    id: r.id,
+    kind: "transfer",
+    amount: Number(r.amount),
+    date: r.date,
+    notes: null,
+    categoryName: `Pindahan dari ${r.from_wallet_name}`,
+    categoryIcon: "🔁",
+  }));
 
   type DistRow = {
     id: string;
@@ -301,5 +319,5 @@ export async function getTransactionsByWallet(
       categoryIcon: r.expense!.category?.icon ?? null,
     }));
 
-  return [...incomes, ...expenses].sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  return [...incomes, ...expenses, ...transfers].sort((a, b) => +new Date(b.date) - +new Date(a.date));
 }
