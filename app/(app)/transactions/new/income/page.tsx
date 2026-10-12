@@ -226,25 +226,36 @@ function IncomeForm({ editId, initial }: { editId: string | null; initial: Initi
               </p>
             ) : (
               <div className="space-y-3">
-                {budgetWallets.map((w) => (
-                  <div
-                    key={w.id}
-                    className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold text-gray-900">{w.name}</p>
-                      <p className="text-xs text-gray-500">
-                        Saldo {formatCurrency(w.current_balance)}
-                      </p>
+                {budgetWallets.map((w) => {
+                  const walletAlloc = alloc[w.id] || 0;
+                  const balance = Number(w.current_balance);
+                  return (
+                    <div
+                      key={w.id}
+                      className="rounded-2xl border border-gray-200 bg-white p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-gray-900">{w.name}</p>
+                          <p className="text-xs text-gray-500">
+                            Saldo saat ini {formatCurrency(balance)}
+                          </p>
+                        </div>
+                        <div className="w-36">
+                          <CurrencyInput
+                            value={walletAlloc}
+                            onChange={(v) => setAlloc((a) => ({ ...a, [w.id]: v }))}
+                          />
+                        </div>
+                      </div>
+                      {walletAlloc > 0 && (
+                        <p className="amount mt-2 text-xs text-success-600">
+                          → Saldo jadi {formatCurrency(balance + walletAlloc)}
+                        </p>
+                      )}
                     </div>
-                    <div className="w-36">
-                      <CurrencyInput
-                        value={alloc[w.id] || 0}
-                        onChange={(v) => setAlloc((a) => ({ ...a, [w.id]: v }))}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

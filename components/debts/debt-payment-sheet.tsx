@@ -139,6 +139,16 @@ export function DebtPaymentSheet({
                           onChange={(v) => setSources((s) => ({ ...s, [w.id]: v }))}
                           aria-invalid={insufficient}
                         />
+                        {(sources[w.id] || 0) > 0 && (
+                          <p
+                            className={cn(
+                              "amount mt-1.5 text-xs",
+                              insufficient ? "text-error-600" : "text-gray-500"
+                            )}
+                          >
+                            → Sisa saldo {formatCurrency(balance - (sources[w.id] || 0))}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
