@@ -195,7 +195,7 @@ export default function ReportsPage() {
         {period === "year" && (
           <Card>
             <CardContent>
-              <h2 className="mb-2 font-bold text-gray-900">Tren 12 bulan</h2>
+              <h2 className="mb-2 font-bold text-gray-900">Tren per bulan</h2>
               {trend.isLoading ? (
                 <Skeleton className="h-[200px] rounded-xl" />
               ) : (

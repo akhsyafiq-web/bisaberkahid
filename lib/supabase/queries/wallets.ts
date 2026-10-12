@@ -123,6 +123,18 @@ export async function updateWallet(
     );
   }
 
+  // Keep the goal's end date in step with a changed duration.
+  if (input.goal_duration_months) {
+    const { data: current } = await supabase
+      .from("wallets")
+      .select("goal_start_date")
+      .eq("id", walletId)
+      .maybeSingle();
+    const end = current?.goal_start_date ? new Date(current.goal_start_date) : new Date();
+    end.setMonth(end.getMonth() + input.goal_duration_months);
+    patch.goal_end_date = toISODate(end);
+  }
+
   const { data, error } = await supabase
     .from("wallets")
     .update(patch)
@@ -133,11 +145,18 @@ export async function updateWallet(
   return data as Wallet;
 }
 
+/**
+ * "Delete" a wallet by archiving it and zeroing its balance. The row is kept so
+ * past transactions still know which wallet they used.
+ */
 export async function deleteWallet(
   supabase: SupabaseClient,
   walletId: string
 ): Promise<void> {
-  const { error } = await supabase.from("wallets").delete().eq("id", walletId);
+  const { error } = await supabase
+    .from("wallets")
+    .update({ is_active: false, current_balance: 0 })
+    .eq("id", walletId);
   if (error) throw error;
 }
 
@@ -166,19 +185,6 @@ export async function transferWalletBalance(
     p_from_wallet_id: fromWalletId,
     p_to_wallet_id: toWalletId,
     p_amount: amount,
-  });
-  if (error) throw error;
-}
-
-/** Adjust a wallet balance by a delta (positive credits, negative debits). */
-export async function adjustWalletBalance(
-  supabase: SupabaseClient,
-  walletId: string,
-  delta: number
-): Promise<void> {
-  const { error } = await supabase.rpc("adjust_wallet_balance", {
-    p_wallet_id: walletId,
-    p_delta: delta,
   });
   if (error) throw error;
 }

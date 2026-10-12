@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Category } from "@/types";
 import { createIncome, createExpense } from "@/lib/supabase/queries/transactions";
+import { toISODate } from "@/lib/utils";
 
 export interface ImportError {
   row: number;
@@ -23,6 +24,9 @@ export interface ParseResult {
   expenses: ParsedRow[];
   errors: ImportError[];
 }
+
+/** Note text on the template's example rows (see lib/excel/template.ts). */
+export const TEMPLATE_EXAMPLE_NOTE = "contoh — hapus baris ini";
 
 const FIVE_YEARS_MS = 5 * 365 * 24 * 60 * 60 * 1000;
 
@@ -49,7 +53,9 @@ function parseSheet(
   if (!ws) return;
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
   const catByName = new Map(categories.map((c) => [c.name.toLowerCase(), c]));
-  const today = Date.now();
+  // Compare calendar dates as strings; UTC timestamps reject "today" before 07.00 WIB.
+  const todayISO = toISODate(new Date());
+  const oldestISO = toISODate(new Date(Date.now() - FIVE_YEARS_MS));
 
   rows.forEach((row, i) => {
     const rowNum = i + 2; // header is row 1
@@ -58,16 +64,16 @@ function parseSheet(
     const rawAmount = row["Nominal"];
     const notes = String(row["Catatan"] ?? "").trim();
 
-    // skip fully-empty rows
+    // skip fully-empty rows and the template's example row
     if (!rawDate && !rawCat && !rawAmount) return;
+    if (notes.startsWith(TEMPLATE_EXAMPLE_NOTE)) return;
 
     const date = normalizeDate(rawDate);
     if (!date) {
       result.errors.push({ row: rowNum, sheet: sheetName, field: "Tanggal", message: "Format tanggal tidak valid (YYYY-MM-DD)" });
       return;
     }
-    const t = new Date(date).getTime();
-    if (t > today || today - t > FIVE_YEARS_MS) {
+    if (date > todayISO || date < oldestISO) {
       result.errors.push({ row: rowNum, sheet: sheetName, field: "Tanggal", message: "Tanggal di luar rentang wajar" });
       return;
     }

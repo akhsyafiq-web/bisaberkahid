@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Receipt } from "lucide-react";
+import { NotFoundState } from "@/components/layout/not-found-state";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,6 +45,18 @@ export default function DebtDetailPage({
       setConfirmOpen(false);
     }
   };
+
+
+  if (!isLoading && !debt) {
+    return (
+      <NotFoundState
+        title="Hutang"
+        message="Catatan hutang ini tidak ditemukan atau sudah dihapus."
+        backHref="/debts"
+        backLabel="Lihat semua hutang"
+      />
+    );
+  }
 
   return (
     <>

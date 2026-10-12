@@ -26,9 +26,9 @@ export function useReports(period: Period, from: Date, to: Date) {
   });
 
   const trend = useQuery({
-    queryKey: ["report-trend", userId, period],
+    queryKey: ["report-trend", userId, from.getFullYear()],
     enabled: !!userId && period === "year",
-    queryFn: () => getMonthlyTrend(createClient(), userId!, 12),
+    queryFn: () => getMonthlyTrend(createClient(), userId!, from.getFullYear()),
   });
 
   return { expense, income, trend };

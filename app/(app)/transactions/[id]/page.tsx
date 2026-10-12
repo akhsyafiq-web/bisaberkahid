@@ -3,6 +3,7 @@
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
+import { NotFoundState } from "@/components/layout/not-found-state";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -56,6 +57,18 @@ export default function TransactionDetailPage({
       : txn?.type === "expense"
         ? txn.sources.map((s) => ({ name: s.wallet?.name ?? "Dompet", amount: s.amount }))
         : [];
+
+
+  if (!isLoading && !txn) {
+    return (
+      <NotFoundState
+        title="Detail transaksi"
+        message="Transaksi ini tidak ditemukan atau sudah dihapus."
+        backHref="/transactions"
+        backLabel="Lihat semua transaksi"
+      />
+    );
+  }
 
   return (
     <>
@@ -134,7 +147,11 @@ export default function TransactionDetailPage({
       <ConfirmDialog
         open={confirmOpen}
         title="Hapus transaksi?"
-        description="Ini akan mengembalikan saldo dompet seperti semula. Tindakan ini tidak bisa dibatalkan."
+        description={
+          isIncome
+            ? "Nominal ini akan ditarik kembali dari dompet tujuannya. Kalau uangnya sudah terpakai, saldo dompet bisa menjadi minus. Tindakan ini tidak bisa dibatalkan."
+            : "Ini akan mengembalikan saldo dompet seperti semula. Tindakan ini tidak bisa dibatalkan."
+        }
         confirmLabel="Ya, hapus"
         destructive
         loading={del.isPending}

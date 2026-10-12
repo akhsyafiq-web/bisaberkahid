@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRight, Pencil, Receipt } from "lucide-react";
 import { useWallet, useWalletTransactions, useDeleteWallet } from "@/hooks/use-wallets";
+import { NotFoundState } from "@/components/layout/not-found-state";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -64,6 +65,18 @@ export default function WalletDetailPage({
       setConfirmOpen(false);
     }
   };
+
+
+  if (!isLoading && (!wallet || !wallet.is_active)) {
+    return (
+      <NotFoundState
+        title="Dompet"
+        message="Dompet ini tidak ditemukan atau sudah dihapus."
+        backHref="/wallets"
+        backLabel="Lihat semua dompet"
+      />
+    );
+  }
 
   return (
     <>
@@ -177,7 +190,7 @@ export default function WalletDetailPage({
       <ConfirmDialog
         open={confirmOpen}
         title="Hapus dompet?"
-        description="Dompet akan dihapus. Riwayat transaksi yang sudah tercatat tidak ikut terhapus."
+        description="Dompet akan hilang dari daftar. Transaksi lama tetap tersimpan dan tetap mencatat nama dompet ini."
         confirmLabel="Ya, hapus"
         destructive
         loading={deleteWallet.isPending}

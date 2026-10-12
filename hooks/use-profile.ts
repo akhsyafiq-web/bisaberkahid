@@ -34,6 +34,10 @@ export function useProfile() {
         .select("*")
         .single();
       if (error) throw error;
+      // Keep the auth session's name in sync; the greeting reads it from there.
+      if (patch.name) {
+        await supabase.auth.updateUser({ data: { name: patch.name } });
+      }
       return data as Profile;
     },
     onSuccess: () => {

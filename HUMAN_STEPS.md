@@ -15,6 +15,7 @@ Jalankan berurutan. Yang sudah kamu jalankan ditandai ✅.
 - [ ] `database/categories_toggle.sql` — kolom `is_active` untuk kategori (Fase 9)
 - [ ] `database/wallet_delete.sql` — hapus dompet + pindahkan sisa saldo ke Dompet Besar
 - [ ] `database/wallet_transfer.sql` — pindah saldo antar dompet + riwayatnya
+- [ ] `database/qa_fixes.sql` — perbaikan hasil QA: tutup fungsi terbuka, arsipkan dompet saat dihapus
 
 > Fase 7 (Hutang) **tidak butuh SQL baru** — pembayaran hutang memakai
 > `create_expense` + trigger `sync_debt_paid_amount` yang sudah ada.

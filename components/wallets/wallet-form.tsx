@@ -122,8 +122,8 @@ function MonthlyForm({ wallet }: { wallet?: Wallet }) {
 
       {budget > 0 && (
         <Card className="bg-brand-50 p-3.5 text-sm text-brand-800">
-          Dompet <b>{name || "ini"}</b> akan mendapatkan{" "}
-          <b>{formatCurrency(budget)}</b> setiap awal bulan.
+          Anggaran dompet <b>{name || "ini"}</b>: <b>{formatCurrency(budget)}</b> per
+          bulan. Isi saldonya lewat pemasukan atau pindah saldo dari dompet lain.
         </Card>
       )}
 

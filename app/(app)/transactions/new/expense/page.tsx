@@ -30,6 +30,8 @@ interface Initial {
   notes: string;
   sources: Record<string, number>;
   debtId: string | null;
+  /** Names of wallets in `sources`, so archived ones can still be shown. */
+  walletNames: Record<string, string>;
 }
 
 export default function NewExpensePage() {
@@ -66,6 +68,9 @@ function ExpenseLoader() {
           notes: existing.notes ?? "",
           sources: Object.fromEntries(existing.sources.map((s) => [s.wallet_id, s.amount])),
           debtId: existing.debt_id,
+          walletNames: Object.fromEntries(
+            existing.sources.map((s) => [s.wallet_id, s.wallet?.name ?? "Dompet"])
+          ),
         }
       : {
           amount: 0,
@@ -74,6 +79,7 @@ function ExpenseLoader() {
           notes: "",
           sources: {},
           debtId: null,
+          walletNames: {},
         };
 
   return <ExpenseForm editId={editId} initial={initial} />;
@@ -111,9 +117,19 @@ function ExpenseForm({ editId, initial }: { editId: string | null; initial: Init
   const shortfall = amount - totalAvailable;
   const notEnoughFunds = !!wallets && amount > 0 && shortfall > 0;
 
-  const overdraw = allWallets.some(
-    (w) => (sources[w.id] ?? 0) > Number(w.current_balance)
-  );
+  // What a wallet can really fund: its balance plus whatever this expense
+  // already took from it (that amount is rolled back when the edit is saved).
+  const availableOf = (w: { id: string; current_balance: number }) =>
+    Number(w.current_balance) + (initial.sources[w.id] ?? 0);
+
+  const overdraw = allWallets.some((w) => (sources[w.id] ?? 0) > availableOf(w));
+
+  // Sources from wallets that have since been deleted: kept as-is.
+  const lockedSources = wallets
+    ? Object.entries(sources).filter(
+        ([id, v]) => v > 0 && !allWallets.some((w) => w.id === id)
+      )
+    : [];
   const canSubmit =
     amount > 0 && !!categoryId && remaining === 0 && !overdraw && taken > 0;
 
@@ -139,8 +155,8 @@ function ExpenseForm({ editId, initial }: { editId: string | null; initial: Init
       date,
       notes: notes || null,
       debt_id: initial.debtId,
-      sources: allWallets
-        .map((w) => ({ wallet_id: w.id, amount: sources[w.id] || 0 }))
+      sources: Object.entries(sources)
+        .map(([wallet_id, amt]) => ({ wallet_id, amount: amt || 0 }))
         .filter((s) => s.amount > 0),
     };
     try {
@@ -250,9 +266,20 @@ function ExpenseForm({ editId, initial }: { editId: string | null; initial: Init
           </div>
 
           <div className="space-y-3">
+            {lockedSources.map(([id, v]) => (
+              <div
+                key={id}
+                className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-3 text-sm"
+              >
+                <span className="text-gray-600">
+                  {initial.walletNames[id] ?? "Dompet"} (sudah dihapus)
+                </span>
+                <span className="amount text-gray-700">{formatCurrency(v)}</span>
+              </div>
+            ))}
             {allWallets.map((w) => {
               const selected = w.id in sources;
-              const balance = Number(w.current_balance);
+              const balance = availableOf(w);
               const insufficient = (sources[w.id] ?? 0) > balance;
               const emptyWallet = balance <= 0;
               return (

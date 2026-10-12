@@ -28,7 +28,8 @@ export async function getIncomes(
       "*, category:income_categories(*), distributions:income_distributions(*, wallet:wallets(id,name,type))"
     )
     .eq("user_id", userId)
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (filters.from) query = query.gte("date", filters.from);
   if (filters.to) query = query.lte("date", filters.to);
@@ -109,7 +110,8 @@ export async function getExpenses(
       "*, category:expense_categories(*), sources:expense_wallet_sources(*, wallet:wallets(id,name,type))"
     )
     .eq("user_id", userId)
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
 
   if (filters.from) query = query.gte("date", filters.from);
   if (filters.to) query = query.lte("date", filters.to);
@@ -194,7 +196,11 @@ export async function getTransactionFeed(
     ...expenses.map((e) => ({ type: "expense" as const, ...e })),
   ];
 
-  feed.sort((a, b) => +new Date(b.date) - +new Date(a.date));
+  feed.sort(
+    (a, b) =>
+      +new Date(b.date) - +new Date(a.date) ||
+      +new Date(b.created_at) - +new Date(a.created_at)
+  );
   return filters.limit ? feed.slice(0, filters.limit) : feed;
 }
 

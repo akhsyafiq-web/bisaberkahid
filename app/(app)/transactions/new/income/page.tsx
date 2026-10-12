@@ -23,6 +23,8 @@ interface Initial {
   date: string;
   notes: string;
   alloc: Record<string, number>;
+  /** Names of wallets in `alloc`, so archived ones can still be shown. */
+  walletNames: Record<string, string>;
 }
 
 export default function NewIncomePage() {
@@ -63,8 +65,18 @@ function IncomeLoader() {
               .filter((d) => d.wallet?.type !== "default")
               .map((d) => [d.wallet_id, d.amount])
           ),
+          walletNames: Object.fromEntries(
+            existing.distributions.map((d) => [d.wallet_id, d.wallet?.name ?? "Dompet"])
+          ),
         }
-      : { amount: 0, categoryId: null, date: toISODate(new Date()), notes: "", alloc: {} };
+      : {
+          amount: 0,
+          categoryId: null,
+          date: toISODate(new Date()),
+          notes: "",
+          alloc: {},
+          walletNames: {},
+        };
 
   return <IncomeForm editId={editId} initial={initial} />;
 }
@@ -92,6 +104,13 @@ function IncomeForm({ editId, initial }: { editId: string | null; initial: Initi
     [wallets]
   );
 
+  // Allocations to wallets that have since been deleted: kept as-is.
+  const lockedAlloc = wallets
+    ? Object.entries(alloc).filter(
+        ([id, v]) => v > 0 && !budgetWallets.some((w) => w.id === id)
+      )
+    : [];
+
   const allocated = useMemo(
     () => Object.values(alloc).reduce((s, v) => s + (v || 0), 0),
     [alloc]
@@ -108,8 +127,10 @@ function IncomeForm({ editId, initial }: { editId: string | null; initial: Initi
   };
 
   const submit = async () => {
-    const distributions = budgetWallets
-      .map((w) => ({ wallet_id: w.id, amount: alloc[w.id] || 0 }))
+    // Built from `alloc` (not the visible list) so allocations to deleted
+    // wallets are sent back unchanged instead of being re-routed.
+    const distributions = Object.entries(alloc)
+      .map(([wallet_id, amt]) => ({ wallet_id, amount: amt || 0 }))
       .filter((d) => d.amount > 0);
     const payload = {
       category_id: categoryId!,
@@ -139,6 +160,7 @@ function IncomeForm({ editId, initial }: { editId: string | null; initial: Initi
       <AppHeader
         title={isEdit ? "Edit pemasukan" : step === 1 ? "Catat pemasukan" : "Distribusi dompet"}
         showBack
+        onBack={step === 2 ? () => setStep(1) : undefined}
       />
 
       <div className="space-y-5 px-4 pt-5">
@@ -270,6 +292,18 @@ function IncomeForm({ editId, initial }: { editId: string | null; initial: Initi
                 })}
               </div>
             )}
+
+            {lockedAlloc.map(([id, v]) => (
+              <div
+                key={id}
+                className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 p-3 text-sm"
+              >
+                <span className="text-gray-600">
+                  {initial.walletNames[id] ?? "Dompet"} (sudah dihapus)
+                </span>
+                <span className="amount text-gray-700">{formatCurrency(v)}</span>
+              </div>
+            ))}
 
             <label className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3.5">
               <input

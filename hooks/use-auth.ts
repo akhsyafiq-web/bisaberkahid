@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -11,6 +12,7 @@ import { useAuthStore } from "@/stores/auth.store";
  */
 export function useAuth() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, isLoading, setUser, setLoading, clearUser } = useAuthStore();
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export function useAuth() {
     const supabase = createClient();
     await supabase.auth.signOut();
     clearUser();
+    queryClient.clear(); // never show one account's cached data to the next
     router.replace("/login");
   };
 

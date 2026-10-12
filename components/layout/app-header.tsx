@@ -7,12 +7,14 @@ import { cn } from "@/lib/utils";
 export interface AppHeaderProps {
   title: string;
   showBack?: boolean;
+  /** Override the back button (default: browser history back). */
+  onBack?: () => void;
   rightAction?: React.ReactNode;
   className?: string;
 }
 
 /** Sticky 56px header with optional back button and a right-side action slot. */
-export function AppHeader({ title, showBack, rightAction, className }: AppHeaderProps) {
+export function AppHeader({ title, showBack, onBack, rightAction, className }: AppHeaderProps) {
   const router = useRouter();
   return (
     <header
@@ -23,7 +25,7 @@ export function AppHeader({ title, showBack, rightAction, className }: AppHeader
     >
       {showBack && (
         <button
-          onClick={() => router.back()}
+          onClick={() => (onBack ? onBack() : router.back())}
           aria-label="Kembali"
           className="-ml-2 grid size-9 place-items-center rounded-full text-gray-700 hover:bg-gray-100"
         >

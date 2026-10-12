@@ -11,10 +11,12 @@ export async function getMonthSummary(
   const from = toISODate(getStartOfMonth(month));
   const to = toISODate(getEndOfMonth(month));
 
-  const [{ data: inc }, { data: exp }] = await Promise.all([
+  const [{ data: inc, error: e1 }, { data: exp, error: e2 }] = await Promise.all([
     supabase.from("incomes").select("amount").eq("user_id", userId).gte("date", from).lte("date", to),
     supabase.from("expenses").select("amount").eq("user_id", userId).gte("date", from).lte("date", to),
   ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
 
   const totalIncome = (inc ?? []).reduce((s, r) => s + (r.amount as number), 0);
   const totalExpense = (exp ?? []).reduce((s, r) => s + (r.amount as number), 0);
@@ -74,25 +76,21 @@ export async function getCategoryBreakdown(
   return result;
 }
 
+/** Income vs expense for each month (Jan–Des) of one calendar year. */
 export async function getMonthlyTrend(
   supabase: SupabaseClient,
   userId: string,
-  months = 12
+  year = new Date().getFullYear()
 ): Promise<MonthlyTrendPoint[]> {
-  const now = new Date();
-  const points: MonthlyTrendPoint[] = [];
   const labels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-
-  for (let i = months - 1; i >= 0; i--) {
-    const ref = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const summary = await getMonthSummary(supabase, userId, ref);
-    points.push({
-      month: labels[ref.getMonth()],
-      income: summary.totalIncome,
-      expense: summary.totalExpense,
-    });
-  }
-  return points;
+  const summaries = await Promise.all(
+    labels.map((_, m) => getMonthSummary(supabase, userId, new Date(year, m, 1)))
+  );
+  return summaries.map((s, m) => ({
+    month: labels[m],
+    income: s.totalIncome,
+    expense: s.totalExpense,
+  }));
 }
 
 /** Convenience: summary for a named period. */

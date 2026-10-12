@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Download, Upload, FileSpreadsheet, CheckCircle2, AlertTriangle } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ type State = "idle" | "parsing" | "preview" | "importing" | "done";
 
 export default function ImportExportPage() {
   const userId = useUserId();
+  const queryClient = useQueryClient();
   const { data: incomeCats } = useCategories("income");
   const { data: expenseCats } = useCategories("expense");
   const fileRef = useRef<HTMLInputElement>(null);
@@ -84,6 +86,7 @@ export default function ImportExportPage() {
       const r = await processImport(supabase, parsed, def.id);
       setResult(r);
       setState("done");
+      await queryClient.invalidateQueries(); // balances, feeds and reports all changed
       toast.success(`${r.imported} transaksi diimpor`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal mengimpor");
