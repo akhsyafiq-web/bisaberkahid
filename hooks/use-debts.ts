@@ -47,22 +47,28 @@ function useInvalidateDebts() {
 }
 
 /**
- * Create a debt. When `incomeWalletId` is given, the borrowed money is also
- * recorded as income (category "Pinjaman") into that wallet. The debt is saved
- * first; if the income step fails the debt stays and `incomeFailed` is true.
+ * Create a debt. With `recordIncome`, the borrowed money is also recorded as
+ * income (category "Pinjaman"): `incomeDistributions` go to the chosen wallets
+ * and any remainder lands in Dompet Besar. The debt is saved first; if the
+ * income step fails the debt stays and `incomeFailed` is true.
  */
 export function useCreateDebt() {
   const userId = useUserId();
   const invalidate = useInvalidateDebts();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (input: CreateDebtInput & { incomeWalletId?: string | null }) => {
+    mutationFn: async (
+      input: CreateDebtInput & {
+        recordIncome?: boolean;
+        incomeDistributions?: WalletSourceInput[];
+      }
+    ) => {
       const supabase = createClient();
-      const { incomeWalletId, ...debtInput } = input;
+      const { recordIncome, incomeDistributions, ...debtInput } = input;
       const debt = await createDebt(supabase, userId!, debtInput);
 
       let incomeFailed = false;
-      if (incomeWalletId) {
+      if (recordIncome) {
         try {
           const cats = await getCategories(supabase, userId!, "income");
           const cat =
@@ -76,14 +82,14 @@ export function useCreateDebt() {
             amount: debtInput.total_amount,
             date: toISODate(new Date()),
             notes: `Hutang dari ${debtInput.creditor_name}`,
-            distributions: [{ wallet_id: incomeWalletId, amount: debtInput.total_amount }],
-            autoRemainderToDefault: false,
+            distributions: (incomeDistributions ?? []).filter((d) => d.amount > 0),
+            autoRemainderToDefault: true,
           });
         } catch {
           incomeFailed = true;
         }
       }
-      return { debt, incomeRecorded: !!incomeWalletId && !incomeFailed, incomeFailed };
+      return { debt, incomeRecorded: !!recordIncome && !incomeFailed, incomeFailed };
     },
     onSuccess: () => {
       invalidate();

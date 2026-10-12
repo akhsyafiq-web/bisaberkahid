@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check } from "lucide-react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, useWatch, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AppHeader } from "@/components/layout/app-header";
@@ -32,9 +31,7 @@ export default function NewDebtPage() {
 
   // Hutang biasanya berarti uang masuk, jadi default-nya dicatat sebagai pemasukan.
   const [asIncome, setAsIncome] = useState(true);
-  const [pickedWalletId, setPickedWalletId] = useState<string | null>(null);
-  const walletId =
-    pickedWalletId ?? wallets?.find((w) => w.type === "default")?.id ?? wallets?.[0]?.id ?? null;
+  const [alloc, setAlloc] = useState<Record<string, number>>({});
 
   const {
     register,
@@ -46,9 +43,15 @@ export default function NewDebtPage() {
     defaultValues: { creditor_name: "", total_amount: 0, due_date: "", notes: "" },
   });
 
+  const total = useWatch({ control, name: "total_amount" }) || 0;
+  const budgetWallets = (wallets ?? []).filter((w) => w.type !== "default");
+  const allocated = budgetWallets.reduce((s, w) => s + (alloc[w.id] || 0), 0);
+  const remainder = total - allocated;
+  const overAllocated = asIncome && remainder < 0;
+
   const onSubmit = async (v: Values) => {
-    if (asIncome && !walletId) {
-      toast.error("Pilih dompet tujuan pemasukan dulu");
+    if (overAllocated) {
+      toast.error("Total pembagian melebihi nominal hutang");
       return;
     }
     try {
@@ -57,7 +60,11 @@ export default function NewDebtPage() {
         total_amount: v.total_amount,
         due_date: v.due_date || null,
         notes: v.notes || null,
-        incomeWalletId: asIncome ? walletId : null,
+        recordIncome: asIncome,
+        incomeDistributions: budgetWallets.map((w) => ({
+          wallet_id: w.id,
+          amount: alloc[w.id] || 0,
+        })),
       });
       if (res.incomeFailed) {
         toast.error("Hutang tersimpan, tapi pemasukannya gagal dicatat. Catat manual ya.");
@@ -143,51 +150,59 @@ export default function NewDebtPage() {
                 Catat juga sebagai pemasukan
               </span>
               <span className="block text-xs text-gray-500">
-                Uang hutang ini otomatis menambah saldo dompet yang kamu pilih.
+                Uang hutang ini otomatis menambah saldo dompet; bisa dibagi ke beberapa dompet.
               </span>
             </span>
           </label>
 
           {asIncome && (
             <div className="mt-3 space-y-2">
-              <p className="text-sm font-medium text-gray-700">Masukkan ke dompet</p>
-              {(wallets ?? []).map((w) => {
-                const selected = w.id === walletId;
+              <p className="text-sm font-medium text-gray-700">Bagi ke dompet</p>
+              {budgetWallets.map((w) => {
+                const walletAlloc = alloc[w.id] || 0;
+                const balance = Number(w.current_balance);
                 return (
-                  <button
-                    key={w.id}
-                    type="button"
-                    onClick={() => setPickedWalletId(w.id)}
-                    aria-pressed={selected}
-                    className={cn(
-                      "flex w-full items-center gap-3 rounded-xl border p-2.5 text-left",
-                      selected ? "border-brand-300 bg-brand-25" : "border-gray-200"
+                  <div key={w.id} className="rounded-xl border border-gray-200 p-2.5">
+                    <div className="flex items-center gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-gray-900">{w.name}</p>
+                        <p className="text-xs text-gray-500">
+                          Saldo saat ini {formatCurrency(balance)}
+                        </p>
+                      </div>
+                      <div className="w-36">
+                        <CurrencyInput
+                          value={walletAlloc}
+                          onChange={(val) => setAlloc((a) => ({ ...a, [w.id]: val }))}
+                        />
+                      </div>
+                    </div>
+                    {walletAlloc > 0 && (
+                      <p className="amount mt-1.5 text-xs text-success-600">
+                        → Saldo jadi {formatCurrency(balance + walletAlloc)}
+                      </p>
                     )}
-                  >
-                    <span
-                      className={cn(
-                        "grid size-5 shrink-0 place-items-center rounded-full border",
-                        selected ? "border-brand-600 bg-brand-600 text-white" : "border-gray-300"
-                      )}
-                    >
-                      {selected && <Check className="size-3.5" />}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-gray-900">
-                        {w.name}
-                      </span>
-                      <span className="block text-xs text-gray-500">
-                        Saldo {formatCurrency(Number(w.current_balance))}
-                      </span>
-                    </span>
-                  </button>
+                  </div>
                 );
               })}
+
+              <p
+                className={cn(
+                  "rounded-xl px-3.5 py-2.5 text-sm",
+                  overAllocated ? "bg-error-50 text-error-700" : "bg-brand-50 text-brand-800"
+                )}
+              >
+                {overAllocated
+                  ? `Pembagian melebihi nominal hutang sebesar ${formatCurrency(-remainder)}.`
+                  : budgetWallets.length === 0
+                    ? "Seluruh nominal akan masuk ke Dompet Besar."
+                    : `Sisa ${formatCurrency(remainder)} akan masuk ke Dompet Besar.`}
+              </p>
             </div>
           )}
         </div>
 
-        <Button type="submit" full size="lg" loading={isSubmitting}>
+        <Button type="submit" full size="lg" loading={isSubmitting} disabled={overAllocated}>
           Simpan hutang
         </Button>
       </form>
