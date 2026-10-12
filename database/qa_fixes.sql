@@ -69,3 +69,11 @@ begin
      set is_active = false, current_balance = 0
    where id = p_wallet_id;
 end; $$;
+
+-- 4. Hapus user gagal bila user itu pernah membayar hutang -------------------
+-- Saat user dihapus, trigger ini ikut berjalan sebagai role auth Supabase,
+-- yang tidak punya akses ke tabel public.debts/expenses. SECURITY DEFINER
+-- membuatnya berjalan sebagai pemilik. Fungsi trigger tidak bisa dipanggil
+-- lewat API, jadi ini tidak membuka akses baru.
+alter function public.sync_debt_paid_amount()
+  security definer set search_path = public;
