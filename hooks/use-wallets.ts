@@ -12,6 +12,7 @@ import {
   updateWallet,
   deleteWallet,
   deleteWalletMoveBalance,
+  transferWalletBalance,
 } from "@/lib/supabase/queries/wallets";
 import type { WalletType, CreateWalletInput, UpdateWalletInput } from "@/types";
 
@@ -76,6 +77,21 @@ export function useDeleteWallet() {
         : deleteWallet(createClient(), walletId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.wallets(userId) });
+      queryClient.invalidateQueries({ queryKey: ["total-balance", userId] });
+    },
+  });
+}
+
+export function useTransferBalance() {
+  const userId = useUserId();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { fromWalletId: string; toWalletId: string; amount: number }) =>
+      transferWalletBalance(createClient(), input.fromWalletId, input.toWalletId, input.amount),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.wallets(userId) });
+      queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
       queryClient.invalidateQueries({ queryKey: ["total-balance", userId] });
     },
   });

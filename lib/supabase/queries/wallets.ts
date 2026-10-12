@@ -155,6 +155,21 @@ export async function deleteWalletMoveBalance(
   if (error) throw error;
 }
 
+/** Move money between two of the user's wallets, atomically (wallet_transfer.sql). */
+export async function transferWalletBalance(
+  supabase: SupabaseClient,
+  fromWalletId: string,
+  toWalletId: string,
+  amount: number
+): Promise<void> {
+  const { error } = await supabase.rpc("transfer_wallet_balance", {
+    p_from_wallet_id: fromWalletId,
+    p_to_wallet_id: toWalletId,
+    p_amount: amount,
+  });
+  if (error) throw error;
+}
+
 /** Adjust a wallet balance by a delta (positive credits, negative debits). */
 export async function adjustWalletBalance(
   supabase: SupabaseClient,
@@ -237,7 +252,8 @@ export async function getTotalBalance(
 
 export interface WalletTransactionItem {
   id: string;
-  kind: "income" | "expense" | "transfer";
+  /** "transfer" = saldo masuk dari dompet lain, "transfer_out" = saldo keluar. */
+  kind: "income" | "expense" | "transfer" | "transfer_out";
   amount: number;
   date: string;
   notes: string | null;
@@ -266,23 +282,35 @@ export async function getTransactionsByWallet(
   if (e1) throw e1;
   if (e2) throw e2;
 
-  // Saldo pindahan dari dompet yang dihapus. Tabel ini baru ada setelah
-  // database/wallet_delete.sql dijalankan, jadi error diperlakukan sebagai kosong.
+  // Pindahan saldo antar dompet (masuk & keluar). Tabel/kolomnya baru ada
+  // setelah database/wallet_transfer.sql dijalankan, jadi error = kosong.
   const { data: tr } = await supabase
     .from("wallet_transfers")
-    .select("id, amount, date, from_wallet_name")
-    .eq("to_wallet_id", walletId);
+    .select("id, amount, date, from_wallet_id, from_wallet_name, to_wallet_id, to_wallet_name")
+    .or(`to_wallet_id.eq.${walletId},from_wallet_id.eq.${walletId}`);
   const transfers: WalletTransactionItem[] = (
-    (tr ?? []) as { id: string; amount: number; date: string; from_wallet_name: string }[]
-  ).map((r) => ({
-    id: r.id,
-    kind: "transfer",
-    amount: Number(r.amount),
-    date: r.date,
-    notes: null,
-    categoryName: `Pindahan dari ${r.from_wallet_name}`,
-    categoryIcon: "🔁",
-  }));
+    (tr ?? []) as {
+      id: string;
+      amount: number;
+      date: string;
+      from_wallet_name: string;
+      to_wallet_id: string;
+      to_wallet_name: string | null;
+    }[]
+  ).map((r) => {
+    const incoming = r.to_wallet_id === walletId;
+    return {
+      id: r.id,
+      kind: incoming ? "transfer" : "transfer_out",
+      amount: Number(r.amount),
+      date: r.date,
+      notes: null,
+      categoryName: incoming
+        ? `Pindahan dari ${r.from_wallet_name}`
+        : `Pindah ke ${r.to_wallet_name ?? "dompet lain"}`,
+      categoryIcon: "🔁",
+    };
+  });
 
   type DistRow = {
     id: string;

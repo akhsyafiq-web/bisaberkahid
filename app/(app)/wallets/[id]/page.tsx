@@ -3,7 +3,7 @@
 import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Pencil, Receipt } from "lucide-react";
+import { ArrowLeftRight, Pencil, Receipt } from "lucide-react";
 import { useWallet, useWalletTransactions, useDeleteWallet } from "@/hooks/use-wallets";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { TransferSheet } from "@/components/wallets/transfer-sheet";
 import { toast } from "@/hooks/use-toast";
 import {
   formatCurrency,
@@ -33,6 +34,7 @@ export default function WalletDetailPage({
   const deleteWallet = useDeleteWallet();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [moveBalance, setMoveBalance] = useState(true);
+  const [transferOpen, setTransferOpen] = useState(false);
 
   const isDefault = wallet?.type === "default";
 
@@ -88,6 +90,17 @@ export default function WalletDetailPage({
           <StatsCard wallet={wallet} />
         )}
 
+        {wallet && (
+          <Button
+            variant="secondary"
+            full
+            disabled={Number(wallet.current_balance) <= 0}
+            onClick={() => setTransferOpen(true)}
+          >
+            <ArrowLeftRight className="size-4" /> Pindahkan saldo ke dompet lain
+          </Button>
+        )}
+
         <section>
           <h2 className="mb-3 text-[17px] font-bold text-gray-900">Transaksi</h2>
           {loadingTxns ? (
@@ -116,23 +129,23 @@ export default function WalletDetailPage({
                 <div key={`${t.kind}-${t.id}`} className="flex items-center gap-3 py-3">
                   <span
                     className={`grid size-10 shrink-0 place-items-center rounded-full text-lg ${
-                      t.kind !== "expense" ? "bg-success-50" : "bg-gray-100"
+                      (t.kind === "income" || t.kind === "transfer") ? "bg-success-50" : "bg-gray-100"
                     }`}
                   >
-                    {t.categoryIcon ?? (t.kind !== "expense" ? "💰" : "🧾")}
+                    {t.categoryIcon ?? ((t.kind === "income" || t.kind === "transfer") ? "💰" : "🧾")}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-gray-900">
-                      {t.categoryName ?? (t.kind !== "expense" ? "Masuk" : "Keluar")}
+                      {t.categoryName ?? ((t.kind === "income" || t.kind === "transfer") ? "Masuk" : "Keluar")}
                     </p>
                     <p className="text-[13px] text-gray-500">{formatRelativeDay(t.date)}</p>
                   </div>
                   <p
                     className={`amount text-[15px] ${
-                      t.kind !== "expense" ? "text-success-600" : "text-gray-900"
+                      (t.kind === "income" || t.kind === "transfer") ? "text-success-600" : "text-gray-900"
                     }`}
                   >
-                    {t.kind !== "expense" ? "+" : "−"}
+                    {(t.kind === "income" || t.kind === "transfer") ? "+" : "−"}
                     {formatCurrency(t.amount)}
                   </p>
                 </div>
@@ -152,6 +165,14 @@ export default function WalletDetailPage({
           </Button>
         )}
       </div>
+
+      {wallet && (
+        <TransferSheet
+          open={transferOpen}
+          onClose={() => setTransferOpen(false)}
+          wallet={wallet}
+        />
+      )}
 
       <ConfirmDialog
         open={confirmOpen}

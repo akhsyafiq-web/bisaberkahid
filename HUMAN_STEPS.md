@@ -14,6 +14,7 @@ Jalankan berurutan. Yang sudah kamu jalankan ditandai ✅.
 - [x] `database/transactions_functions.sql` — RPC transaksi atomik ✅
 - [ ] `database/categories_toggle.sql` — kolom `is_active` untuk kategori (Fase 9)
 - [ ] `database/wallet_delete.sql` — hapus dompet + pindahkan sisa saldo ke Dompet Besar
+- [ ] `database/wallet_transfer.sql` — pindah saldo antar dompet + riwayatnya
 
 > Fase 7 (Hutang) **tidak butuh SQL baru** — pembayaran hutang memakai
 > `create_expense` + trigger `sync_debt_paid_amount` yang sudah ada.
