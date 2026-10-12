@@ -141,6 +141,20 @@ export async function deleteWallet(
   if (error) throw error;
 }
 
+/**
+ * Delete a wallet and move its remaining balance into Dompet Besar, atomically.
+ * Requires database/wallet_delete.sql.
+ */
+export async function deleteWalletMoveBalance(
+  supabase: SupabaseClient,
+  walletId: string
+): Promise<void> {
+  const { error } = await supabase.rpc("delete_wallet_move_balance", {
+    p_wallet_id: walletId,
+  });
+  if (error) throw error;
+}
+
 /** Adjust a wallet balance by a delta (positive credits, negative debits). */
 export async function adjustWalletBalance(
   supabase: SupabaseClient,

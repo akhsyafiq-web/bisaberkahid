@@ -32,17 +32,32 @@ export default function WalletDetailPage({
   const { data: txns, isLoading: loadingTxns } = useWalletTransactions(id);
   const deleteWallet = useDeleteWallet();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [moveBalance, setMoveBalance] = useState(true);
 
   const isDefault = wallet?.type === "default";
 
+  const balance = Number(wallet?.current_balance ?? 0);
+  const hasBalance = balance > 0;
+
   const onDelete = async () => {
+    const move = hasBalance && moveBalance;
     try {
-      await deleteWallet.mutateAsync(id);
-      toast.success("Dompet berhasil dihapus");
+      await deleteWallet.mutateAsync({ walletId: id, moveBalance: move });
+      toast.success(
+        move
+          ? `Dompet dihapus, ${formatCurrency(balance)} dipindahkan ke Dompet Besar`
+          : "Dompet berhasil dihapus"
+      );
       router.push("/wallets");
       router.refresh();
-    } catch {
-      toast.error("Gagal menghapus dompet");
+    } catch (e) {
+      const missingFn =
+        typeof e === "object" && e !== null && (e as { code?: string }).code === "PGRST202";
+      toast.error(
+        missingFn
+          ? "Fitur pindah saldo belum aktif. Jalankan database/wallet_delete.sql di Supabase."
+          : "Gagal menghapus dompet"
+      );
     } finally {
       setConfirmOpen(false);
     }
@@ -147,8 +162,60 @@ export default function WalletDetailPage({
         loading={deleteWallet.isPending}
         onConfirm={onDelete}
         onCancel={() => setConfirmOpen(false)}
-      />
+      >
+        {hasBalance && (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700">
+              Dompet ini masih punya saldo {formatCurrency(balance)}. Mau diapakan?
+            </p>
+            <BalanceOption
+              checked={moveBalance}
+              onSelect={() => setMoveBalance(true)}
+              title="Pindahkan ke Dompet Besar"
+              desc="Total saldo kamu tidak berubah."
+            />
+            <BalanceOption
+              checked={!moveBalance}
+              onSelect={() => setMoveBalance(false)}
+              title="Hapus bersama dompetnya"
+              desc={`Total saldo kamu berkurang ${formatCurrency(balance)}.`}
+            />
+          </div>
+        )}
+      </ConfirmDialog>
     </>
+  );
+}
+
+function BalanceOption({
+  checked,
+  onSelect,
+  title,
+  desc,
+}: {
+  checked: boolean;
+  onSelect: () => void;
+  title: string;
+  desc: string;
+}) {
+  return (
+    <label
+      className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 ${
+        checked ? "border-brand-300 bg-brand-25" : "border-gray-200"
+      }`}
+    >
+      <input
+        type="radio"
+        name="wallet-balance-action"
+        checked={checked}
+        onChange={onSelect}
+        className="mt-0.5 size-4 accent-brand-600"
+      />
+      <span>
+        <span className="block text-sm font-semibold text-gray-900">{title}</span>
+        <span className="block text-xs text-gray-500">{desc}</span>
+      </span>
+    </label>
   );
 }
 

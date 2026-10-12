@@ -13,6 +13,7 @@ Jalankan berurutan. Yang sudah kamu jalankan ditandai ✅.
 - [x] `database/schema.sql` — tabel, RLS, trigger, seed defaults ✅
 - [x] `database/transactions_functions.sql` — RPC transaksi atomik ✅
 - [ ] `database/categories_toggle.sql` — kolom `is_active` untuk kategori (Fase 9)
+- [ ] `database/wallet_delete.sql` — hapus dompet + pindahkan sisa saldo ke Dompet Besar
 
 > Fase 7 (Hutang) **tidak butuh SQL baru** — pembayaran hutang memakai
 > `create_expense` + trigger `sync_debt_paid_amount` yang sudah ada.

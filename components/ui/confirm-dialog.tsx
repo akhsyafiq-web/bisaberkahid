@@ -7,6 +7,8 @@ export interface ConfirmDialogProps {
   open: boolean;
   title: string;
   description?: string;
+  /** Extra content (e.g. options) rendered between the description and buttons. */
+  children?: React.ReactNode;
   confirmLabel?: string;
   cancelLabel?: string;
   destructive?: boolean;
@@ -20,6 +22,7 @@ export function ConfirmDialog({
   open,
   title,
   description,
+  children,
   confirmLabel = "Ya, lanjutkan",
   cancelLabel = "Batal",
   destructive,
@@ -50,6 +53,7 @@ export function ConfirmDialog({
       >
         <h2 className="text-lg font-bold text-gray-900">{title}</h2>
         {description && <p className="mt-1.5 text-sm text-gray-500">{description}</p>}
+        {children && <div className="mt-4">{children}</div>}
         <div className="mt-5 flex gap-3">
           <Button variant="secondary" full onClick={onCancel} disabled={loading}>
             {cancelLabel}
