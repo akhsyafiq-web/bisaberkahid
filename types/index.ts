@@ -98,6 +98,9 @@ export interface Debt {
   total_amount: number;
   paid_amount: number;
   remaining_amount: number; // generated column
+  debt_date?: string; // added by debt_features.sql
+  /** The "Pinjaman" income recorded together with this debt, if any. */
+  income_id?: string | null;
   due_date: string | null;
   notes: string | null;
   status: DebtStatus;
@@ -223,6 +226,7 @@ export type UpdateWalletInput = Partial<CreateWalletInput> & { is_active?: boole
 export interface CreateDebtInput {
   creditor_name: string;
   total_amount: number;
+  debt_date?: string | null;
   due_date?: string | null;
   notes?: string | null;
 }

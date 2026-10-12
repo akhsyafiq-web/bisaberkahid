@@ -8,11 +8,12 @@ import {
   getDebts,
   getDebtById,
   createDebt,
+  updateDebt,
   deleteDebt,
 } from "@/lib/supabase/queries/debts";
-import { createExpense, createIncome } from "@/lib/supabase/queries/transactions";
-import { getCategories, createCategory } from "@/lib/supabase/queries/categories";
-import { DEBT_CATEGORY_NAME, LOAN_INCOME_CATEGORY_NAME } from "@/lib/constants";
+import { createExpense } from "@/lib/supabase/queries/transactions";
+import { getCategories } from "@/lib/supabase/queries/categories";
+import { DEBT_CATEGORY_NAME } from "@/lib/constants";
 import { toISODate } from "@/lib/utils";
 import type { CreateDebtInput, DebtStatus, WalletSourceInput } from "@/types";
 
@@ -46,51 +47,13 @@ function useInvalidateDebts() {
   };
 }
 
-/**
- * Create a debt. With `recordIncome`, the borrowed money is also recorded as
- * income (category "Pinjaman"): `incomeDistributions` go to the chosen wallets
- * and any remainder lands in Dompet Besar. The debt is saved first; if the
- * income step fails the debt stays and `incomeFailed` is true.
- */
 export function useCreateDebt() {
-  const userId = useUserId();
   const invalidate = useInvalidateDebts();
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (
-      input: CreateDebtInput & {
-        recordIncome?: boolean;
-        incomeDistributions?: WalletSourceInput[];
-      }
-    ) => {
-      const supabase = createClient();
-      const { recordIncome, incomeDistributions, ...debtInput } = input;
-      const debt = await createDebt(supabase, userId!, debtInput);
-
-      let incomeFailed = false;
-      if (recordIncome) {
-        try {
-          const cats = await getCategories(supabase, userId!, "income");
-          const cat =
-            cats.find((c) => c.name === LOAN_INCOME_CATEGORY_NAME) ??
-            (await createCategory(supabase, userId!, "income", {
-              name: LOAN_INCOME_CATEGORY_NAME,
-              icon: "🤝",
-            }));
-          await createIncome(supabase, {
-            category_id: cat.id,
-            amount: debtInput.total_amount,
-            date: toISODate(new Date()),
-            notes: `Hutang dari ${debtInput.creditor_name}`,
-            distributions: (incomeDistributions ?? []).filter((d) => d.amount > 0),
-            autoRemainderToDefault: true,
-          });
-        } catch {
-          incomeFailed = true;
-        }
-      }
-      return { debt, incomeRecorded: !!recordIncome && !incomeFailed, incomeFailed };
-    },
+    mutationFn: (
+      input: CreateDebtInput & { recordIncome?: boolean; distributions?: WalletSourceInput[] }
+    ) => createDebt(createClient(), input),
     onSuccess: () => {
       invalidate();
       queryClient.invalidateQueries({ queryKey: ["categories"] });
@@ -100,10 +63,19 @@ export function useCreateDebt() {
   });
 }
 
+export function useUpdateDebt(debtId: string) {
+  const invalidate = useInvalidateDebts();
+  return useMutation({
+    mutationFn: (input: CreateDebtInput) => updateDebt(createClient(), debtId, input),
+    onSuccess: invalidate,
+  });
+}
+
 export function useDeleteDebt() {
   const invalidate = useInvalidateDebts();
   return useMutation({
-    mutationFn: (debtId: string) => deleteDebt(createClient(), debtId),
+    mutationFn: ({ debtId, deleteIncome }: { debtId: string; deleteIncome: boolean }) =>
+      deleteDebt(createClient(), debtId, deleteIncome),
     onSuccess: invalidate,
   });
 }

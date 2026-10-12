@@ -2,7 +2,8 @@
 
 import { use, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Receipt } from "lucide-react";
+import Link from "next/link";
+import { Pencil, Trash2, Receipt } from "lucide-react";
 import { NotFoundState } from "@/components/layout/not-found-state";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export default function DebtDetailPage({
   const del = useDeleteDebt();
   const [payOpen, setPayOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleteIncome, setDeleteIncome] = useState(true);
 
   const isPaid = debt?.status === "paid";
   const progress =
@@ -35,8 +37,11 @@ export default function DebtDetailPage({
 
   const onDelete = async () => {
     try {
-      await del.mutateAsync(id);
-      toast.success("Hutang berhasil dihapus");
+      const withIncome = !!debt?.income_id && deleteIncome;
+      await del.mutateAsync({ debtId: id, deleteIncome: withIncome });
+      toast.success(
+        withIncome ? "Hutang dan pemasukannya berhasil dihapus" : "Hutang berhasil dihapus"
+      );
       router.push("/debts");
       router.refresh();
     } catch (e) {
@@ -64,14 +69,25 @@ export default function DebtDetailPage({
         title={debt?.creditor_name ?? "Hutang"}
         showBack
         rightAction={
-          debt && debt.paid_amount === 0 ? (
-            <button
-              onClick={() => setConfirmOpen(true)}
-              aria-label="Hapus hutang"
-              className="grid size-9 place-items-center rounded-full text-error-600 hover:bg-error-50"
-            >
-              <Trash2 className="size-5" />
-            </button>
+          debt ? (
+            <>
+              <Link
+                href={`/debts/${id}/edit`}
+                aria-label="Edit hutang"
+                className="grid size-9 place-items-center rounded-full text-gray-600 hover:bg-gray-100"
+              >
+                <Pencil className="size-5" />
+              </Link>
+              {debt.paid_amount === 0 && (
+                <button
+                  onClick={() => setConfirmOpen(true)}
+                  aria-label="Hapus hutang"
+                  className="grid size-9 place-items-center rounded-full text-error-600 hover:bg-error-50"
+                >
+                  <Trash2 className="size-5" />
+                </button>
+              )}
+            </>
           ) : null
         }
       />
@@ -93,6 +109,11 @@ export default function DebtDetailPage({
                     </span>
                   )}
                 </div>
+                {debt.debt_date && (
+                  <p className="text-sm text-gray-500">
+                    Hutang sejak {formatDate(debt.debt_date, "d MMM yyyy")}
+                  </p>
+                )}
 
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div>
@@ -187,7 +208,27 @@ export default function DebtDetailPage({
         loading={del.isPending}
         onConfirm={onDelete}
         onCancel={() => setConfirmOpen(false)}
-      />
+      >
+        {debt?.income_id && (
+          <label className="flex items-start gap-3 rounded-xl border border-gray-200 p-3">
+            <input
+              type="checkbox"
+              checked={deleteIncome}
+              onChange={(e) => setDeleteIncome(e.target.checked)}
+              className="mt-0.5 size-5 accent-brand-600"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-gray-900">
+                Hapus juga pemasukan &quot;Pinjaman&quot;-nya
+              </span>
+              <span className="block text-xs text-gray-500">
+                {formatCurrency(debt.total_amount)} ditarik kembali dari dompet tujuannya. Kalau
+                uangnya sudah terpakai, saldo dompet bisa menjadi minus.
+              </span>
+            </span>
+          </label>
+        )}
+      </ConfirmDialog>
     </>
   );
 }

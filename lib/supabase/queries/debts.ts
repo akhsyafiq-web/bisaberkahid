@@ -38,50 +38,55 @@ export async function getDebtById(
   return (data as unknown as DebtWithPayments) ?? null;
 }
 
+/**
+ * Create a debt. With `recordIncome`, the borrowed money is also recorded as a
+ * "Pinjaman" income (split per `distributions`, remainder to Dompet Besar) in
+ * the same DB transaction. Requires database/debt_features.sql.
+ */
 export async function createDebt(
   supabase: SupabaseClient,
-  userId: string,
+  input: CreateDebtInput & { recordIncome?: boolean; distributions?: WalletSourceInput[] }
+): Promise<string> {
+  const { data, error } = await supabase.rpc("create_debt", {
+    p_creditor_name: input.creditor_name,
+    p_total_amount: input.total_amount,
+    p_debt_date: input.debt_date ?? null,
+    p_due_date: input.due_date ?? null,
+    p_notes: input.notes ?? null,
+    p_record_income: !!input.recordIncome,
+    p_distributions: (input.distributions ?? []).filter((d) => d.amount > 0),
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function updateDebt(
+  supabase: SupabaseClient,
+  debtId: string,
   input: CreateDebtInput
-): Promise<Debt> {
-  const { data, error } = await supabase
+): Promise<void> {
+  const { error } = await supabase
     .from("debts")
-    .insert({
-      user_id: userId,
+    .update({
       creditor_name: input.creditor_name,
       total_amount: input.total_amount,
-      paid_amount: 0,
+      debt_date: input.debt_date ?? undefined,
       due_date: input.due_date ?? null,
       notes: input.notes ?? null,
-      status: "active",
     })
-    .select("*")
-    .single();
+    .eq("id", debtId);
   if (error) throw error;
-  return data as Debt;
 }
 
-/** Records a debt payment (expense + paid_amount bump). Implemented in Prompt 21. */
-export async function payDebt(
-  _supabase: SupabaseClient,
-  _debtId: string,
-  _amount: number,
-  _sources: WalletSourceInput[]
-): Promise<void> {
-  throw new Error("payDebt() belum diimplementasikan (lihat Prompt 21).");
-}
-
+/** Delete an unpaid debt; `deleteIncome` also removes its linked "Pinjaman" income. */
 export async function deleteDebt(
   supabase: SupabaseClient,
-  debtId: string
+  debtId: string,
+  deleteIncome = false
 ): Promise<void> {
-  const { data: debt } = await supabase
-    .from("debts")
-    .select("paid_amount")
-    .eq("id", debtId)
-    .maybeSingle();
-  if (debt && debt.paid_amount > 0) {
-    throw new Error("Hutang yang sudah dibayar sebagian tidak bisa dihapus.");
-  }
-  const { error } = await supabase.from("debts").delete().eq("id", debtId);
+  const { error } = await supabase.rpc("delete_debt", {
+    p_debt_id: debtId,
+    p_delete_income: deleteIncome,
+  });
   if (error) throw error;
 }

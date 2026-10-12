@@ -14,11 +14,12 @@ import { DateField } from "@/components/ui/date-field";
 import { toast } from "@/hooks/use-toast";
 import { useCreateDebt } from "@/hooks/use-debts";
 import { useWallets } from "@/hooks/use-wallets";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, toISODate } from "@/lib/utils";
 
 const schema = z.object({
   creditor_name: z.string().min(2, "Nama minimal 2 karakter"),
   total_amount: z.number().positive("Nominal harus lebih dari Rp0"),
+  debt_date: z.string().min(1, "Tanggal hutang wajib diisi"),
   due_date: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -40,7 +41,13 @@ export default function NewDebtPage() {
     formState: { errors, isSubmitting },
   } = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { creditor_name: "", total_amount: 0, due_date: "", notes: "" },
+    defaultValues: {
+      creditor_name: "",
+      total_amount: 0,
+      debt_date: toISODate(new Date()),
+      due_date: "",
+      notes: "",
+    },
   });
 
   const total = useWatch({ control, name: "total_amount" }) || 0;
@@ -55,28 +62,30 @@ export default function NewDebtPage() {
       return;
     }
     try {
-      const res = await createDebt.mutateAsync({
+      await createDebt.mutateAsync({
         creditor_name: v.creditor_name,
         total_amount: v.total_amount,
+        debt_date: v.debt_date,
         due_date: v.due_date || null,
         notes: v.notes || null,
         recordIncome: asIncome,
-        incomeDistributions: budgetWallets.map((w) => ({
+        distributions: budgetWallets.map((w) => ({
           wallet_id: w.id,
           amount: alloc[w.id] || 0,
         })),
       });
-      if (res.incomeFailed) {
-        toast.error("Hutang tersimpan, tapi pemasukannya gagal dicatat. Catat manual ya.");
-      } else if (res.incomeRecorded) {
-        toast.success("Hutang dicatat dan masuk sebagai pemasukan!");
-      } else {
-        toast.success("Hutang berhasil dicatat!");
-      }
+      toast.success(
+        asIncome ? "Hutang dicatat dan masuk sebagai pemasukan!" : "Hutang berhasil dicatat!"
+      );
       router.push("/debts");
       router.refresh();
-    } catch {
-      toast.error("Gagal menyimpan hutang");
+    } catch (e) {
+      const err = e as { code?: string; message?: string };
+      toast.error(
+        err.code === "PGRST202"
+          ? "Fitur hutang perlu diperbarui. Jalankan database/debt_features.sql di Supabase."
+          : err.message || "Gagal menyimpan hutang"
+      );
     }
   };
 
@@ -113,6 +122,25 @@ export default function NewDebtPage() {
           />
           {errors.total_amount && (
             <p className="mt-1.5 text-sm text-error-600">{errors.total_amount.message}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="debt_date">Tanggal hutang</Label>
+          <Controller
+            control={control}
+            name="debt_date"
+            render={({ field }) => (
+              <DateField
+                id="debt_date"
+                value={field.value}
+                onChange={field.onChange}
+                invalid={!!errors.debt_date}
+              />
+            )}
+          />
+          {errors.debt_date && (
+            <p className="mt-1.5 text-sm text-error-600">{errors.debt_date.message}</p>
           )}
         </div>
 
