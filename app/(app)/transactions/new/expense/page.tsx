@@ -2,7 +2,8 @@
 
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check } from "lucide-react";
+import Link from "next/link";
+import { Check, Info } from "lucide-react";
 import { AppHeader } from "@/components/layout/app-header";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -101,6 +102,15 @@ function ExpenseForm({ editId, initial }: { editId: string | null; initial: Init
   );
   const remaining = amount - taken;
 
+  // Total yang benar-benar bisa dipakai dari semua dompet. Saat edit, nominal
+  // yang sudah diambil pengeluaran ini dihitung kembali karena akan di-rollback.
+  const totalAvailable = allWallets.reduce(
+    (s, w) => s + Math.max(0, Number(w.current_balance)) + (initial.sources[w.id] ?? 0),
+    0
+  );
+  const shortfall = amount - totalAvailable;
+  const notEnoughFunds = !!wallets && amount > 0 && shortfall > 0;
+
   const overdraw = allWallets.some(
     (w) => (sources[w.id] ?? 0) > Number(w.current_balance)
   );
@@ -195,6 +205,30 @@ function ExpenseForm({ editId, initial }: { editId: string | null; initial: Init
         {/* Wallet sources */}
         <div>
           <Label>Sumber dompet</Label>
+          {notEnoughFunds && (
+            <div
+              role="alert"
+              className="mb-3 flex gap-3 rounded-2xl border border-warning-100 bg-warning-50 p-4"
+            >
+              <Info className="mt-0.5 size-5 shrink-0 text-warning-600" />
+              <div className="min-w-0 text-sm">
+                <p className="font-semibold text-warning-700">
+                  Saldo semua dompet belum cukup
+                </p>
+                <p className="mt-1 text-gray-700">
+                  Total saldo kamu {formatCurrency(totalAvailable)}, masih kurang{" "}
+                  <b className="amount">{formatCurrency(shortfall)}</b> untuk pengeluaran
+                  ini. Yuk catat pemasukan dulu supaya saldonya mencukupi.
+                </p>
+                <Link
+                  href="/transactions/new/income"
+                  className="mt-2 inline-block font-semibold text-brand-700"
+                >
+                  Catat pemasukan →
+                </Link>
+              </div>
+            </div>
+          )}
           <div
             className={cn(
               "mb-3 rounded-2xl p-4",
