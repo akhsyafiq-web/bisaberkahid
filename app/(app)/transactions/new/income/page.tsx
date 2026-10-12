@@ -234,12 +234,24 @@ function IncomeForm({ editId, initial }: { editId: string | null; initial: Initi
                       key={w.id}
                       className="rounded-2xl border border-gray-200 bg-white p-3"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-start gap-3">
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-gray-900">{w.name}</p>
                           <p className="text-xs text-gray-500">
                             Saldo saat ini {formatCurrency(balance)}
                           </p>
+                          {w.type === "monthly" && w.monthly_budget != null && (
+                            <p className="text-xs text-gray-500">
+                              Anggaran {formatCurrency(Number(w.monthly_budget))}/bulan
+                            </p>
+                          )}
+                          {w.type === "goals" && w.goal_target != null && (
+                            <p className="text-xs text-gray-500">
+                              Target {formatCurrency(Number(w.goal_target))}
+                              {w.goal_monthly_target != null &&
+                                ` · ${formatCurrency(Number(w.goal_monthly_target))}/bulan`}
+                            </p>
+                          )}
                         </div>
                         <div className="w-36">
                           <CurrencyInput
